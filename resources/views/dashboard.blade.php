@@ -58,6 +58,30 @@
         .btn-hapus { background: #fee2e2; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; color: #ef4444; font-weight: 600; transition: 0.2s; }
         .btn-hapus:hover { background: #fecaca; }
         
+        /* METODE INPUT BAHAN */
+        .method-tabs { display: inline-flex; gap: 6px; background: #f1f5f9; padding: 5px; border-radius: 12px; margin-bottom: 1.2rem; flex-wrap: wrap; }
+        .method-tab { border: none; background: transparent; padding: 9px 16px; border-radius: 9px; font-weight: 600; font-size: 0.9rem; color: #475569; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: 0.2s; }
+        .method-tab:hover { color: #4f46e5; }
+        .method-tab.active { background: linear-gradient(135deg, #4f46e5, #7c3aed); color: white; box-shadow: 0 4px 12px rgba(79,70,229,0.25); }
+        .btn-light { background: #f1f5f9; color: #4f46e5; border: none; padding: 10px 20px; border-radius: 10px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; font-size: 0.9rem; transition: 0.2s; }
+        .btn-light:hover { background: #e2e8f0; }
+        .btn-modern:disabled, .btn-light:disabled { opacity: 0.55; cursor: not-allowed; }
+        .upload-hint { background: #f8fafc; border: 1px dashed #c7d2fe; border-radius: 12px; padding: 12px 15px; font-size: 0.88rem; color: #475569; line-height: 1.6; margin-bottom: 15px; }
+        .upload-hint code { background: #e0e7ff; color: #4338ca; padding: 1px 6px; border-radius: 5px; font-size: 0.82rem; }
+        .upload-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+        .upload-msg { margin-top: 15px; padding: 12px 15px; border-radius: 10px; font-size: 0.9rem; }
+        .upload-msg.error { background: #fee2e2; color: #b91c1c; }
+        .upload-msg.success { background: #dcfce7; color: #15803d; }
+        .upload-msg.info { background: #e0e7ff; color: #4338ca; }
+        .preview-summary { display: flex; gap: 10px; flex-wrap: wrap; margin: 15px 0; }
+        .preview-summary span { background: #f8fafc; border-radius: 10px; padding: 8px 14px; font-size: 0.85rem; color: #475569; }
+        .preview-summary b { color: #0f172a; }
+        .status-ok { background: #dcfce7; color: #15803d; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; white-space: nowrap; }
+        .status-bad { background: #fee2e2; color: #b91c1c; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; white-space: nowrap; }
+        tr.row-bad td { background: #fff7f7; }
+        .row-errors { color: #b91c1c; font-size: 0.82rem; margin-top: 4px; }
+        .preview-pager { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 12px; flex-wrap: wrap; font-size: 0.85rem; color: #64748b; }
+
         /* MODAL */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.6); backdrop-filter: blur(4px); }
         .modal-content { background: white; margin: 5% auto; padding: 2rem; border-radius: 20px; width: 90%; max-width: 600px; position: relative; animation: scaleIn 0.3s; }
@@ -200,7 +224,12 @@
         <?php if ($role === 'Admin'): ?>
         <div id="master_bahanTab" style="display: none;">
             <div class="card">
-                <div class="card-header">➕ Input Manual Bahan Baru</div>
+                <div class="card-header">➕ Input Bahan Baru</div>
+                <div class="method-tabs" role="tablist">
+                    <button type="button" class="method-tab active" data-method="manual" role="tab"><i class="fas fa-keyboard"></i> Input Manual</button>
+                    <button type="button" class="method-tab" data-method="upload" role="tab"><i class="fas fa-file-upload"></i> Upload CSV/XLSX</button>
+                </div>
+                <div id="panelManual">
                 <form action="simpan_bahan_manual.php" method="POST" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
                     <div style="grid-column: span 2;"><label>Nama Bahan</label><input type="text" name="nama_bahan" required style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px;"></div>
                     <div><label>Kategori</label>
@@ -212,23 +241,59 @@
                     <div><label>Protein</label><input type="number" step="0.1" name="protein" required style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px;"></div>
                     <div><label>Lemak</label><input type="number" step="0.1" name="lemak" required style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px;"></div>
                     <div><label>Karbo</label><input type="number" step="0.1" name="karbohidrat" required style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px;"></div>
-                    <div><label>Serat</label><input type="number" step="0.1" name="serat" required style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px;"></div>
                     <div style="display:flex; align-items:flex-end;"><button type="submit" class="btn-modern" style="width:100%; justify-content:center;">Simpan</button></div>
                 </form>
+                </div>
+                <div id="panelUpload" style="display: none;">
+                    <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 10px;">Upload Data Bahan</h3>
+                    <div class="upload-hint">
+                        Gunakan file <b>.csv</b> (UTF-8, pemisah koma atau titik koma) atau <b>.xlsx</b> (worksheet pertama), maksimal 5 MB dan 5.000 baris.
+                        Baris pertama berisi header dengan kolom wajib:
+                        <code>nama_bahan</code> <code>kategori</code> <code>energi</code> <code>protein</code> <code>lemak</code> <code>karbohidrat</code>.
+                        Kategori: Karbohidrat, Protein Hewani, Protein Nabati, Sayur, Buah, Lemak. Nilai angka boleh memakai titik atau koma desimal, tanpa pemisah ribuan.
+                    </div>
+                    <div class="upload-actions">
+                        <input type="file" id="fileBahan" accept=".csv,.xlsx" style="flex:1; min-width:220px; padding:8px; border:1px solid #cbd5e1; border-radius:8px; background:white;">
+                        <a href="template_bahan_csv.php" class="btn-light"><i class="fas fa-download"></i> Unduh Template CSV</a>
+                        <button type="button" id="btnPreviewBahan" class="btn-modern"><i class="fas fa-eye"></i> Pratinjau Data</button>
+                    </div>
+                    <div id="uploadMsg" class="upload-msg" style="display: none;"></div>
+                    <div id="previewArea" style="display: none;">
+                        <div id="previewInfo" style="margin-top: 15px; font-size: 0.9rem; color: #475569;"></div>
+                        <div class="preview-summary" id="previewSummary"></div>
+                        <div class="table-wrapper">
+                            <table>
+                                <thead><tr><th>Baris</th><th>Nama Bahan</th><th>Kategori</th><th>Energi</th><th>Protein</th><th>Lemak</th><th>Karbohidrat</th><th>Status</th></tr></thead>
+                                <tbody id="previewBody"></tbody>
+                            </table>
+                        </div>
+                        <div class="preview-pager">
+                            <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" id="previewOnlyBad"> Tampilkan hanya baris bermasalah</label>
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <button type="button" class="btn-light" id="previewPrev" style="padding:6px 12px;"><i class="fas fa-chevron-left"></i></button>
+                                <span id="previewPage"></span>
+                                <button type="button" class="btn-light" id="previewNext" style="padding:6px 12px;"><i class="fas fa-chevron-right"></i></button>
+                            </div>
+                        </div>
+                        <div style="margin-top: 15px; text-align: right;">
+                            <button type="button" id="btnImportBahan" class="btn-modern" style="display: none;"><i class="fas fa-database"></i> Impor ke Database</button>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="card">
                 <div class="card-header">📋 Database Bahan Makanan</div>
                 <div class="table-wrapper">
                     <table>
-                        <thead><tr><th>No</th><th>Nama Bahan</th><th>Kategori</th><th>Energi</th><th>Protein</th><th>Lemak</th><th>Aksi</th></tr></thead>
+                        <thead><tr><th>No</th><th>Nama Bahan</th><th>Kategori</th><th>Energi</th><th>Protein</th><th>Lemak</th><th>Karbohidrat</th><th>Aksi</th></tr></thead>
                         <tbody>
                             <?php $no=1; foreach($master_bahan as $row): ?>
                             <tr>
                                 <td><?= $no++ ?></td>
                                 <td style="font-weight: 500;"><?= htmlspecialchars($row['nama_bahan']) ?></td>
                                 <td><span class="badge"><?= htmlspecialchars($row['kategori']) ?></span></td>
-                                <td><?= $row['energi'] ?></td><td><?= $row['protein'] ?></td><td><?= $row['lemak'] ?></td>
+                                <td><?= $row['energi'] ?></td><td><?= $row['protein'] ?></td><td><?= $row['lemak'] ?></td><td><?= $row['karbohidrat'] ?></td>
                                 <td style="display:flex; gap:5px;">
                                     <button class="btn-detail" onclick="editBahan(<?= htmlspecialchars(json_encode($row)) ?>)"><i class="fas fa-edit"></i></button>
                                     <button class="btn-hapus" onclick="hapusBahan(<?= $row['id'] ?>)"><i class="fas fa-trash"></i></button>
@@ -278,7 +343,7 @@
                         <div style="background:#f8fafc; padding:20px; border-radius:12px; border:1px solid #e2e8f0;">
                             <h4 style="margin-bottom:15px; color:#4f46e5;"><?= $lbl ?></h4>
                             <div style="display:grid; gap:10px;">
-                                <?php foreach(['energi' => 'Energi (Kkal)', 'protein' => 'Protein (g)', 'lemak' => 'Lemak (g)', 'karbo' => 'Karbo (g)', 'serat' => 'Serat (g)'] as $k => $v): ?>
+                                <?php foreach(['energi' => 'Energi (Kkal)', 'protein' => 'Protein (g)', 'lemak' => 'Lemak (g)', 'karbo' => 'Karbo (g)'] as $k => $v): ?>
                                 <div>
                                     <label style="font-size:0.8rem; font-weight:600;"><?= $v ?></label>
                                     <input type="number" step="0.1" name="<?= $pref ?>_<?= $k ?>" value="<?= $standarGizi[$lbl][$k] ?>" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;">
@@ -323,7 +388,7 @@
                     <div style="margin-top: 30px; padding: 20px; background: #1e293b; border-radius: 16px; color: white;">
                         <h3 style="margin-bottom: 15px; color: #cbd5e1;">Analisis Kandungan Gizi vs Standar</h3>
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; text-align:center;">
-                            <?php foreach(['Energi'=>'E','Protein'=>'P','Lemak'=>'L','Karbo'=>'Karbo','Serat'=>'Serat'] as $lbl => $id): ?>
+                            <?php foreach(['Energi'=>'E','Protein'=>'P','Lemak'=>'L','Karbo'=>'Karbo'] as $lbl => $id): ?>
                             <div style="background:rgba(255,255,255,0.05); padding:10px; border-radius:10px;">
                                 <div style="font-size:0.8rem; color:#94a3b8;"><?= $lbl ?></div>
                                 <div style="font-size:1.3rem; font-weight:700; color:#facc15;"><span id="tot<?= $id ?>">0</span>/<span id="std<?= $id ?>">0</span></div>
@@ -364,7 +429,6 @@
                 <div><label>Protein</label><input type="number" step="0.01" name="protein" id="edit_protein" required style="width:100%; padding:10px; border-radius:6px; border:1px solid #cbd5e1;"></div>
                 <div><label>Lemak</label><input type="number" step="0.01" name="lemak" id="edit_lemak" required style="width:100%; padding:10px; border-radius:6px; border:1px solid #cbd5e1;"></div>
                 <div><label>Karbo</label><input type="number" step="0.01" name="karbohidrat" id="edit_karbo" required style="width:100%; padding:10px; border-radius:6px; border:1px solid #cbd5e1;"></div>
-                <div style="display:none;"><label>Serat</label><input type="number" step="0.01" name="serat" id="edit_serat"></div>
             </div>
             <button type="submit" class="btn-modern" style="width:100%; justify-content:center;">Simpan Perubahan</button>
         </form>
@@ -445,7 +509,7 @@
     }
 
     function hitungTotal() {
-        let tE = 0, tP = 0, tL = 0, tK = 0, tS = 0;
+        let tE = 0, tP = 0, tL = 0, tK = 0;
         const sasaran = document.getElementById('kategori_sasaran').value;
         const std = standarGizi[sasaran];
 
@@ -453,7 +517,6 @@
         document.getElementById('stdP').innerText = std.protein;
         document.getElementById('stdL').innerText = std.lemak;
         document.getElementById('stdKarbo').innerText = std.karbo;
-        document.getElementById('stdSerat').innerText = std.serat;
 
         document.querySelectorAll('.bahan-row').forEach(row => {
             const idBahan = row.querySelector('.input-bahan').value;
@@ -465,7 +528,6 @@
                 tP += factor * parseFloat(b.protein);
                 tL += factor * parseFloat(b.lemak);
                 tK += factor * parseFloat(b.karbohidrat);
-                tS += factor * parseFloat(b.serat || 0);
             }
         });
 
@@ -473,13 +535,11 @@
         document.getElementById('totP').innerText = tP.toFixed(1);
         document.getElementById('totL').innerText = tL.toFixed(1);
         document.getElementById('totKarbo').innerText = tK.toFixed(1);
-        document.getElementById('totSerat').innerText = tS.toFixed(1);
 
         updateUIStatus('statusE', tE, std.energi);
         updateUIStatus('statusP', tP, std.protein);
         updateUIStatus('statusL', tL, std.lemak);
         updateUIStatus('statusKarbo', tK, std.karbo);
-        updateUIStatus('statusSerat', tS, std.serat);
     }
 
     function updateUIStatus(id, val, target) {
@@ -587,13 +647,134 @@
         document.getElementById('edit_protein').value = b.protein;
         document.getElementById('edit_lemak').value = b.lemak;
         document.getElementById('edit_karbo').value = b.karbohidrat;
-        document.getElementById('edit_serat').value = b.serat;
         document.getElementById('editModal').style.display = 'block';
     }
     function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
     function hapusMenu(id) { if(confirm('Hapus menu ini?')) window.location.href = 'hapus_menu.php?id=' + id; }
     function hapusBahan(id) { if(confirm('Hapus bahan ini?')) window.location.href = 'hapus_bahan.php?id=' + id; }
     function hapusUser(id) { if(confirm('Hapus user ini?')) window.location.href = 'proses_user.php?action=delete&id=' + id; }
+
+    // 5b. METODE INPUT BAHAN (MANUAL / UPLOAD)
+    document.querySelectorAll('.method-tab').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.method-tab').forEach(b => b.classList.toggle('active', b === btn));
+            const m = btn.getAttribute('data-method');
+            document.getElementById('panelManual').style.display = m === 'manual' ? 'block' : 'none';
+            document.getElementById('panelUpload').style.display = m === 'upload' ? 'block' : 'none';
+        });
+    });
+
+    const uploadState = { token: null, rows: [], page: 1, perPage: 50 };
+    const escHtml = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+    function tampilPesanUpload(teks, jenis) {
+        const el = document.getElementById('uploadMsg');
+        if (!el) return;
+        el.className = 'upload-msg ' + jenis;
+        el.innerHTML = teks;
+        el.style.display = teks ? 'block' : 'none';
+    }
+
+    function resetPratinjau() {
+        uploadState.token = null; uploadState.rows = []; uploadState.page = 1;
+        document.getElementById('previewArea').style.display = 'none';
+        document.getElementById('btnImportBahan').style.display = 'none';
+    }
+
+    function renderPratinjau() {
+        const onlyBad = document.getElementById('previewOnlyBad').checked;
+        const rows = onlyBad ? uploadState.rows.filter(r => !r.valid) : uploadState.rows;
+        const pages = Math.max(1, Math.ceil(rows.length / uploadState.perPage));
+        uploadState.page = Math.min(Math.max(1, uploadState.page), pages);
+        const start = (uploadState.page - 1) * uploadState.perPage;
+        document.getElementById('previewBody').innerHTML = rows.slice(start, start + uploadState.perPage).map(r => `
+            <tr class="${r.valid ? '' : 'row-bad'}">
+                <td>${r.baris}</td>
+                <td style="font-weight:500;">${escHtml(r.data.nama_bahan)}</td>
+                <td>${escHtml(r.data.kategori)}</td>
+                <td>${escHtml(r.data.energi)}</td><td>${escHtml(r.data.protein)}</td><td>${escHtml(r.data.lemak)}</td><td>${escHtml(r.data.karbohidrat)}</td>
+                <td>${r.valid ? '<span class="status-ok">Valid</span>' : `<span class="status-bad">${r.duplikat ? 'Duplikat' : 'Tidak Valid'}</span><div class="row-errors">${r.errors.map(escHtml).join('<br>')}</div>`}</td>
+            </tr>`).join('') || '<tr><td colspan="8" style="text-align:center; color:#64748b;">Tidak ada baris untuk ditampilkan.</td></tr>';
+        document.getElementById('previewPage').innerText = `Halaman ${uploadState.page} dari ${pages}`;
+        document.getElementById('previewPrev').disabled = uploadState.page <= 1;
+        document.getElementById('previewNext').disabled = uploadState.page >= pages;
+    }
+
+    const fileBahan = document.getElementById('fileBahan');
+    if (fileBahan) {
+        fileBahan.addEventListener('change', () => {
+            resetPratinjau();
+            const f = fileBahan.files[0];
+            tampilPesanUpload(f ? `File dipilih: <b>${escHtml(f.name)}</b>. Klik "Pratinjau Data" untuk memeriksa isi file.` : '', 'info');
+        });
+        document.getElementById('previewOnlyBad').addEventListener('change', () => { uploadState.page = 1; renderPratinjau(); });
+        document.getElementById('previewPrev').addEventListener('click', () => { uploadState.page--; renderPratinjau(); });
+        document.getElementById('previewNext').addEventListener('click', () => { uploadState.page++; renderPratinjau(); });
+
+        document.getElementById('btnPreviewBahan').addEventListener('click', async () => {
+            const f = fileBahan.files[0];
+            if (!f) { tampilPesanUpload('Pilih file CSV atau XLSX terlebih dahulu.', 'error'); return; }
+            if (!/\.(csv|xlsx)$/i.test(f.name)) { tampilPesanUpload('Format file harus .csv atau .xlsx.', 'error'); return; }
+            if (f.size > 5 * 1024 * 1024) { tampilPesanUpload('Ukuran file maksimal 5 MB.', 'error'); return; }
+
+            const btn = document.getElementById('btnPreviewBahan');
+            btn.disabled = true;
+            resetPratinjau();
+            tampilPesanUpload(`Membaca dan memeriksa <b>${escHtml(f.name)}</b>...`, 'info');
+            const fd = new FormData();
+            fd.append('file_bahan', f);
+            try {
+                const res = await fetch('preview_bahan_upload.php', { method: 'POST', body: fd, headers: { 'Accept': 'application/json' } });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) { tampilPesanUpload(escHtml(data.message || 'File tidak dapat diproses. Silakan coba lagi.'), 'error'); return; }
+
+                uploadState.token = data.token; uploadState.rows = data.rows; uploadState.page = 1;
+                const s = data.summary;
+                document.getElementById('previewInfo').innerHTML = `File: <b>${escHtml(data.nama_file)}</b>` + (data.sheet ? ` &middot; Worksheet: <b>${escHtml(data.sheet)}</b>` : '');
+                document.getElementById('previewSummary').innerHTML =
+                    `<span>Baris terbaca: <b>${s.total}</b></span><span>Valid: <b style="color:#15803d">${s.valid}</b></span><span>Tidak valid: <b style="color:#b91c1c">${s.invalid}</b></span><span>Duplikat: <b style="color:#b91c1c">${s.duplikat}</b></span>`;
+                document.getElementById('previewOnlyBad').checked = s.invalid > 0;
+                renderPratinjau();
+                document.getElementById('previewArea').style.display = 'block';
+                if (s.invalid > 0) {
+                    tampilPesanUpload(`Ditemukan ${s.invalid} baris bermasalah. Perbaiki file lalu unggah kembali sebelum impor.`, 'error');
+                } else {
+                    tampilPesanUpload(`Semua ${s.valid} baris valid. Klik "Impor ke Database" untuk menyimpan.`, 'success');
+                    document.getElementById('btnImportBahan').style.display = 'inline-flex';
+                }
+            } catch (e) {
+                tampilPesanUpload('Gagal menghubungi server. Periksa koneksi lalu coba lagi.', 'error');
+            } finally {
+                btn.disabled = false;
+            }
+        });
+
+        document.getElementById('btnImportBahan').addEventListener('click', async () => {
+            if (!uploadState.token) return;
+            if (!confirm(`Impor ${uploadState.rows.length} bahan ke database?`)) return;
+            const btn = document.getElementById('btnImportBahan');
+            const btnPrev = document.getElementById('btnPreviewBahan');
+            btn.disabled = true; btnPrev.disabled = true;
+            tampilPesanUpload('Menyimpan data ke database...', 'info');
+            const fd = new FormData();
+            fd.append('token', uploadState.token);
+            try {
+                const res = await fetch('import_bahan_upload.php', { method: 'POST', body: fd, headers: { 'Accept': 'application/json' } });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) {
+                    tampilPesanUpload(escHtml(data.message || 'Impor gagal. Tidak ada data yang disimpan.'), 'error');
+                    btn.disabled = false; btnPrev.disabled = false;
+                    return;
+                }
+                alert(data.message);
+                window.location.href = 'index.php#master_bahan';
+            } catch (e) {
+                tampilPesanUpload('Gagal menghubungi server. Periksa koneksi lalu coba lagi.', 'error');
+                btn.disabled = false; btnPrev.disabled = false;
+            }
+        });
+    }
+
 
     // 6. INITIALIZATION
     window.addEventListener('DOMContentLoaded', () => {
@@ -616,8 +797,10 @@
         // Tambah default baris kalkulator
         ['Karbohidrat', 'Protein Hewani', 'Sayur'].forEach(cat => tambahBarisKategori(cat));
         
-        // Buka dashboard pertama kali
-        setActiveTab('dashboard');
+        // Buka dashboard pertama kali (atau tab dari alamat, mis. setelah impor bahan)
+        const tabAwal = location.hash.replace('#', '');
+        setActiveTab(sections.includes(tabAwal) && document.getElementById(tabAwal + 'Tab') ? tabAwal : 'dashboard');
+        if (tabAwal) history.replaceState(null, '', location.pathname + location.search);
     });
 </script>
 </body>

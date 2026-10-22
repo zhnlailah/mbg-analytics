@@ -210,7 +210,6 @@
                     <div><label>Protein</label><input type="number" step="0.1" name="protein" required style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px;"></div>
                     <div><label>Lemak</label><input type="number" step="0.1" name="lemak" required style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px;"></div>
                     <div><label>Karbo</label><input type="number" step="0.1" name="karbohidrat" required style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px;"></div>
-                    <div><label>Serat</label><input type="number" step="0.1" name="serat" required style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px;"></div>
                     <div style="display:flex; align-items:flex-end;"><button type="submit" class="btn-modern" style="width:100%; justify-content:center;">Simpan</button></div>
                 </form>
             </div>
@@ -276,7 +275,7 @@
                         <div style="background:#f8fafc; padding:20px; border-radius:12px; border:1px solid #e2e8f0;">
                             <h4 style="margin-bottom:15px; color:#4f46e5;"><?= $lbl ?></h4>
                             <div style="display:grid; gap:10px;">
-                                <?php foreach(['energi' => 'Energi (Kkal)', 'protein' => 'Protein (g)', 'lemak' => 'Lemak (g)', 'karbo' => 'Karbo (g)', 'serat' => 'Serat (g)'] as $k => $v): ?>
+                                <?php foreach(['energi' => 'Energi (Kkal)', 'protein' => 'Protein (g)', 'lemak' => 'Lemak (g)', 'karbo' => 'Karbo (g)'] as $k => $v): ?>
                                 <div>
                                     <label style="font-size:0.8rem; font-weight:600;"><?= $v ?></label>
                                     <input type="number" step="0.1" name="<?= $pref ?>_<?= $k ?>" value="<?= $standarGizi[$lbl][$k] ?>" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;">
@@ -321,7 +320,7 @@
                     <div style="margin-top: 30px; padding: 20px; background: #1e293b; border-radius: 16px; color: white;">
                         <h3 style="margin-bottom: 15px; color: #cbd5e1;">Analisis Kandungan Gizi vs Standar</h3>
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; text-align:center;">
-                            <?php foreach(['Energi'=>'E','Protein'=>'P','Lemak'=>'L','Karbo'=>'Karbo','Serat'=>'Serat'] as $lbl => $id): ?>
+                            <?php foreach(['Energi'=>'E','Protein'=>'P','Lemak'=>'L','Karbo'=>'Karbo'] as $lbl => $id): ?>
                             <div style="background:rgba(255,255,255,0.05); padding:10px; border-radius:10px;">
                                 <div style="font-size:0.8rem; color:#94a3b8;"><?= $lbl ?></div>
                                 <div style="font-size:1.3rem; font-weight:700; color:#facc15;"><span id="tot<?= $id ?>">0</span>/<span id="std<?= $id ?>">0</span></div>
@@ -362,7 +361,6 @@
                 <div><label>Protein</label><input type="number" step="0.01" name="protein" id="edit_protein" required style="width:100%; padding:10px; border-radius:6px; border:1px solid #cbd5e1;"></div>
                 <div><label>Lemak</label><input type="number" step="0.01" name="lemak" id="edit_lemak" required style="width:100%; padding:10px; border-radius:6px; border:1px solid #cbd5e1;"></div>
                 <div><label>Karbo</label><input type="number" step="0.01" name="karbohidrat" id="edit_karbo" required style="width:100%; padding:10px; border-radius:6px; border:1px solid #cbd5e1;"></div>
-                <div style="display:none;"><label>Serat</label><input type="number" step="0.01" name="serat" id="edit_serat"></div>
             </div>
             <button type="submit" class="btn-modern" style="width:100%; justify-content:center;">Simpan Perubahan</button>
         </form>
@@ -443,7 +441,7 @@
     }
 
     function hitungTotal() {
-        let tE = 0, tP = 0, tL = 0, tK = 0, tS = 0;
+        let tE = 0, tP = 0, tL = 0, tK = 0;
         const sasaran = document.getElementById('kategori_sasaran').value;
         const std = standarGizi[sasaran];
 
@@ -451,7 +449,6 @@
         document.getElementById('stdP').innerText = std.protein;
         document.getElementById('stdL').innerText = std.lemak;
         document.getElementById('stdKarbo').innerText = std.karbo;
-        document.getElementById('stdSerat').innerText = std.serat;
 
         document.querySelectorAll('.bahan-row').forEach(row => {
             const idBahan = row.querySelector('.input-bahan').value;
@@ -463,7 +460,6 @@
                 tP += factor * parseFloat(b.protein);
                 tL += factor * parseFloat(b.lemak);
                 tK += factor * parseFloat(b.karbohidrat);
-                tS += factor * parseFloat(b.serat || 0);
             }
         });
 
@@ -471,13 +467,11 @@
         document.getElementById('totP').innerText = tP.toFixed(1);
         document.getElementById('totL').innerText = tL.toFixed(1);
         document.getElementById('totKarbo').innerText = tK.toFixed(1);
-        document.getElementById('totSerat').innerText = tS.toFixed(1);
 
         updateUIStatus('statusE', tE, std.energi);
         updateUIStatus('statusP', tP, std.protein);
         updateUIStatus('statusL', tL, std.lemak);
         updateUIStatus('statusKarbo', tK, std.karbo);
-        updateUIStatus('statusSerat', tS, std.serat);
     }
 
     function updateUIStatus(id, val, target) {
@@ -585,7 +579,6 @@
         document.getElementById('edit_protein').value = b.protein;
         document.getElementById('edit_lemak').value = b.lemak;
         document.getElementById('edit_karbo').value = b.karbohidrat;
-        document.getElementById('edit_serat').value = b.serat;
         document.getElementById('editModal').style.display = 'block';
     }
     function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }

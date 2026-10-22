@@ -35,8 +35,8 @@ class UserController extends Controller
     public function updateSettings(Request $request) {
         if (session('role') !== 'Admin') die("Akses Ditolak");
         $data = [
-            "Kelas Ringan" => ["energi" => (float)$request->r_energi, "protein" => (float)$request->r_protein, "lemak" => (float)$request->r_lemak, "karbo" => (float)$request->r_karbo, "serat" => (float)$request->r_serat],
-            "Kelas Berat" => ["energi" => (float)$request->b_energi, "protein" => (float)$request->b_protein, "lemak" => (float)$request->b_lemak, "karbo" => (float)$request->b_karbo, "serat" => (float)$request->b_serat]
+            "Kelas Ringan" => ["energi" => (float)$request->r_energi, "protein" => (float)$request->r_protein, "lemak" => (float)$request->r_lemak, "karbo" => (float)$request->r_karbo],
+            "Kelas Berat" => ["energi" => (float)$request->b_energi, "protein" => (float)$request->b_protein, "lemak" => (float)$request->b_lemak, "karbo" => (float)$request->b_karbo]
         ];
         file_put_contents(public_path('standar_gizi.json'), json_encode($data, JSON_PRETTY_PRINT));
         return redirect('/index.php?status=settings_updated');

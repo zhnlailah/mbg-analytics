@@ -173,7 +173,7 @@
                         <i class="fas fa-calculator text-2xl"></i>
                     </div>
                     <h3 class="text-xl font-bold mb-3 text-slate-800">Kalkulator Makronutrien</h3>
-                    <p class="text-slate-500 leading-relaxed text-sm font-medium">Masukan bahan baku dan takaran, sistem akan menghitung secara real-time kandungan Energi, Protein, Lemak, Karbohidrat, dan Serat per 100 gram bahan.</p>
+                    <p class="text-slate-500 leading-relaxed text-sm font-medium">Masukan bahan baku dan takaran, sistem akan menghitung secara real-time kandungan Energi, Protein, Lemak, dan Karbohidrat per 100 gram bahan.</p>
                 </div>
 
                 <div class="bg-slate-50 p-8 rounded-3xl border border-slate-100 hover:border-emerald-200 hover:shadow-xl hover:shadow-emerald-100/50 transition-all duration-300 group">
