@@ -35,6 +35,9 @@ Route::get('/cetak_pdf.php', [MenuController::class, 'cetakPdf']);
 Route::get('/export_excel.php', [MenuController::class, 'exportExcel']);
 Route::post('/upload_json.php', [MenuController::class, 'uploadJson']);
 Route::get('/import_db.php', [MenuController::class, 'importDb']);
+Route::get('/template_bahan_csv.php', [MenuController::class, 'templateBahanCsv']);
+Route::post('/preview_bahan_upload.php', [MenuController::class, 'previewBahanUpload']);
+Route::post('/import_bahan_upload.php', [MenuController::class, 'importBahanUpload']);
 
 // 4. Rute Fitur Admin & Pengaturan User
 Route::get('/get_users.php', [UserController::class, 'getUsers']);

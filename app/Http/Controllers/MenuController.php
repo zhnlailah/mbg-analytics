@@ -3,6 +3,9 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
+use App\Services\BahanFileImporter;
 
 class MenuController extends Controller
 {
@@ -20,8 +23,8 @@ class MenuController extends Controller
         $standarPath = public_path('standar_gizi.json');
         if (!file_exists($standarPath)) {
             $standarGizi = [
-                "Kelas Ringan" => ["energi" => 1400, "protein" => 25, "lemak" => 50, "karbo" => 220, "serat" => 20], 
-                "Kelas Berat" => ["energi" => 2375, "protein" => 70, "lemak" => 78, "karbo" => 350, "serat" => 33]
+                "Kelas Ringan" => ["energi" => 1400, "protein" => 25, "lemak" => 50, "karbo" => 220], 
+                "Kelas Berat" => ["energi" => 2375, "protein" => 70, "lemak" => 78, "karbo" => 350]
             ];
             file_put_contents($standarPath, json_encode($standarGizi));
         } else {
@@ -80,12 +83,12 @@ class MenuController extends Controller
     }
 
     public function simpanBahanManual(Request $request) {
-        DB::table('master_bahan')->insert(['nama_bahan' => trim($request->nama_bahan), 'kategori' => $request->kategori, 'energi' => (float)$request->energi, 'protein' => (float)$request->protein, 'lemak' => (float)$request->lemak, 'karbohidrat' => (float)$request->karbohidrat, 'serat' => (float)$request->serat]);
+        DB::table('master_bahan')->insert(['nama_bahan' => trim($request->nama_bahan), 'kategori' => $request->kategori, 'energi' => (float)$request->energi, 'protein' => (float)$request->protein, 'lemak' => (float)$request->lemak, 'karbohidrat' => (float)$request->karbohidrat] + $this->seratDefault());
         echo "<script>alert('Bahan berhasil ditambahkan!'); window.location.href='index.php';</script>";
     }
 
     public function editBahan(Request $request) {
-        DB::table('master_bahan')->where('id', $request->id)->update(['nama_bahan' => $request->nama_bahan, 'kategori' => $request->kategori, 'energi' => $request->energi, 'protein' => $request->protein, 'lemak' => $request->lemak, 'karbohidrat' => $request->karbohidrat, 'serat' => $request->serat ?? 0]);
+        DB::table('master_bahan')->where('id', $request->id)->update(['nama_bahan' => $request->nama_bahan, 'kategori' => $request->kategori, 'energi' => $request->energi, 'protein' => $request->protein, 'lemak' => $request->lemak, 'karbohidrat' => $request->karbohidrat]);
         echo "<script>alert('Data bahan berhasil diperbarui!'); window.location.href='index.php';</script>";
     }
 
@@ -172,5 +175,123 @@ class MenuController extends Controller
         }
         if(file_exists($filePath)) unlink($filePath);
         echo "<script>alert('Impor Selesai! Berhasil: $berhasil data.'); window.location.href = 'index.php';</script>";
+    }
+
+    // ===== Upload CSV/XLSX Master Bahan =====
+    const IMPORT_TTL = 1800; // detik
+
+    // Serat tidak lagi diinput dari halaman Master Bahan; isi default agar kompatibel dengan kolom lama.
+    private function seratDefault() {
+        return Schema::hasColumn('master_bahan', 'serat') ? ['serat' => 0] : [];
+    }
+
+    private function importDir() {
+        $dir = storage_path('app/bahan_import');
+        if (!is_dir($dir)) mkdir($dir, 0755, true);
+        return $dir;
+    }
+
+    private function bersihkanImportKedaluwarsa() {
+        foreach (glob($this->importDir() . '/*') ?: [] as $f) {
+            if (is_file($f) && filemtime($f) < time() - self::IMPORT_TTL) @unlink($f);
+        }
+    }
+
+    public function templateBahanCsv() {
+        if (session('role') !== 'Admin') die("Akses Ditolak");
+        $csv = "\xEF\xBB\xBFnama_bahan,kategori,energi,protein,lemak,karbohidrat\r\nBeras,Karbohidrat,360,6.8,0.7,78.9\r\nTelur Ayam,Protein Hewani,154,12.4,10.8,0.7\r\n";
+        return response($csv)
+            ->header('Content-Type', 'text/csv; charset=UTF-8')
+            ->header('Content-Disposition', 'attachment; filename="template_bahan.csv"');
+    }
+
+    public function previewBahanUpload(Request $request) {
+        if (session('role') !== 'Admin') return response()->json(['message' => 'Akses ditolak.'], 403);
+        $this->bersihkanImportKedaluwarsa();
+
+        $file = $request->file('file_bahan');
+        if (!$file || !$file->isValid()) return response()->json(['message' => 'Pilih file CSV atau XLSX terlebih dahulu (maksimal 5 MB).'], 422);
+        if ($file->getSize() > 5 * 1024 * 1024) return response()->json(['message' => 'Ukuran file maksimal 5 MB.'], 422);
+        if ($file->getSize() === 0) return response()->json(['message' => 'File kosong.'], 422);
+        $ext = strtolower($file->getClientOriginalExtension());
+        if (!in_array($ext, ['csv', 'xlsx'], true)) return response()->json(['message' => 'Format file harus .csv atau .xlsx.'], 422);
+
+        // Hapus file sementara sebelumnya milik pengguna ini.
+        $lama = session('bahan_import');
+        if ($lama && is_file($lama['path'])) @unlink($lama['path']);
+        session()->forget('bahan_import');
+
+        $token = Str::random(40);
+        $file->move($this->importDir(), $token . '.' . $ext);
+        $path = $this->importDir() . '/' . $token . '.' . $ext;
+
+        $importer = new BahanFileImporter();
+        $hasil = $importer->process($path, $ext);
+        if ($hasil === null) {
+            @unlink($path);
+            return response()->json(['message' => $importer->fileError], 422);
+        }
+
+        session(['bahan_import' => [
+            'token' => $token, 'path' => $path, 'ext' => $ext, 'user_id' => session('user_id'),
+            'expires' => time() + self::IMPORT_TTL,
+        ]]);
+
+        return response()->json([
+            'token' => $token,
+            'nama_file' => $file->getClientOriginalName(),
+            'sheet' => $importer->sheetName,
+            'summary' => $hasil['summary'],
+            'rows' => $hasil['rows'],
+        ]);
+    }
+
+    public function importBahanUpload(Request $request) {
+        if (session('role') !== 'Admin') return response()->json(['message' => 'Akses ditolak.'], 403);
+        $info = session('bahan_import');
+        if (!$info || !hash_equals($info['token'], (string) $request->input('token')) || $info['user_id'] !== session('user_id')) {
+            return response()->json(['message' => 'Data pratinjau tidak ditemukan. Silakan pilih file dan lakukan pratinjau ulang.'], 422);
+        }
+        if ($info['expires'] < time() || !is_file($info['path'])) {
+            if (is_file($info['path'])) @unlink($info['path']);
+            session()->forget('bahan_import');
+            return response()->json(['message' => 'Sesi pratinjau sudah kedaluwarsa. Silakan pratinjau ulang file.'], 422);
+        }
+
+        // Validasi ulang dari file di server, bukan dari data pratinjau browser.
+        $importer = new BahanFileImporter();
+        $hasil = $importer->process($info['path'], $info['ext']);
+        if ($hasil === null) return response()->json(['message' => $importer->fileError], 422);
+        if ($hasil['summary']['invalid'] > 0) {
+            return response()->json(['message' => 'Impor dibatalkan: masih ada ' . $hasil['summary']['invalid'] . ' baris tidak valid atau duplikat. Perbaiki file lalu unggah kembali.'], 422);
+        }
+
+        $serat = $this->seratDefault();
+        try {
+            $jumlah = DB::transaction(function () use ($hasil, $serat) {
+                // Periksa ulang duplikat tepat sebelum menyimpan.
+                $nama = array_map(fn($r) => mb_strtolower($r['data']['nama_bahan']), $hasil['rows']);
+                $ada = DB::table('master_bahan')->pluck('nama_bahan')->map(fn($n) => mb_strtolower(trim((string) $n)))->all();
+                if (array_intersect($nama, $ada)) throw new \DomainException('duplikat');
+
+                foreach (array_chunk($hasil['rows'], 500) as $chunk) {
+                    DB::table('master_bahan')->insert(array_map(fn($r) => [
+                        'nama_bahan' => $r['data']['nama_bahan'], 'kategori' => $r['data']['kategori'],
+                        'energi' => $r['data']['energi'], 'protein' => $r['data']['protein'],
+                        'lemak' => $r['data']['lemak'], 'karbohidrat' => $r['data']['karbohidrat'],
+                    ] + $serat, $chunk));
+                }
+                return count($hasil['rows']);
+            });
+        } catch (\DomainException $e) {
+            return response()->json(['message' => 'Impor dibatalkan: sebagian bahan sudah ada di database. Silakan pratinjau ulang file.'], 422);
+        } catch (\Throwable $e) {
+            report($e);
+            return response()->json(['message' => 'Impor gagal. Tidak ada data yang disimpan. Silakan coba lagi.'], 500);
+        }
+
+        @unlink($info['path']);
+        session()->forget('bahan_import');
+        return response()->json(['message' => "Berhasil mengimpor $jumlah bahan", 'jumlah' => $jumlah]);
     }
 }
